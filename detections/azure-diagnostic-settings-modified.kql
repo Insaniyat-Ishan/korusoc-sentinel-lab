@@ -1,0 +1,25 @@
+// KORU-DET-001: Azure diagnostic settings modified
+// Purpose: detect successful creation, modification, or deletion of Azure
+// diagnostic settings, which control the export of platform logs.
+// Sentinel schedule: every 5 minutes, with a 10-minute lookback.
+
+AzureActivity
+| where OperationNameValue in~ (
+    "MICROSOFT.INSIGHTS/DIAGNOSTICSETTINGS/WRITE",
+    "MICROSOFT.INSIGHTS/DIAGNOSTICSETTINGS/DELETE"
+)
+| where ActivityStatusValue =~ "Success"
+| project TimeGenerated,
+          OperationNameValue,
+          ActivityStatusValue,
+          Caller,
+          CallerIpAddress,
+          ResourceGroup,
+          ResourceId,
+          CorrelationId
+
+// Suggested tuning for a production environment:
+// - maintain a watchlist of approved deployment identities;
+// - raise severity for delete operations;
+// - compare activity with an approved change window;
+// - retain the original event even when an identity is allowlisted.
